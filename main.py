@@ -10,7 +10,7 @@ def save_result(method, name, result, k):
     result[name][k] = {}
     result[name][k]['tour'] = method(name)
 
-def experiment(ks, s1_range, count_cities, count_radius):
+def experiment(ks, s1_range, count_cities, count_radius, methods):
     print("start experiment")
     results = {
         'lin_kernighan': {},
@@ -21,21 +21,11 @@ def experiment(ks, s1_range, count_cities, count_radius):
         'ant_colony': {},
         'hybrid': {}
     }
-    methods = [
-            'lin_kernighan',
-            'simulated_annealing',
-            'genetic',
-            'ant_colony',
-            'dynamic',
-            'hybrid'
-            # 'branch_and_bound',
-    ]
     
 
     for k in ks:
-        # matrix = generate_radial_clusters_matrix(count_cities, count_radius, k, s1_range[0], s1_range[1])
-        # matrix = generate_circle_matrix(count_cities, k)
-        matrix = generate_cluster_matrix(k, count_cities)
+        matrix = generate_radial_clusters_matrix(count_cities, count_radius, k, s1_range[0], s1_range[1])
+        # matrix = generate_cluster_matrix(k, count_cities)
         solver = TSPSolver(matrix)
         print(f"k: {k}")
         
@@ -48,6 +38,9 @@ def experiment(ks, s1_range, count_cities, count_radius):
             else:
                 execution_time = timeit.timeit(lambda: save_result(solver.solve, method, results, k), number=1)
                 length = solver._tour_length(results[method][k]['tour'])
+            
+            # execution_time = timeit.timeit(lambda: save_result(solver.solve, method, results, k), number=1)
+            # length = solver._tour_length(results[method][k]['tour'])
             results[method][k]["time"] = execution_time
             results[method][k]['length'] = length
             print(f"\t{method:20} tour: {results[method][k]['tour']} length: {length:.1f} time: {execution_time}")
@@ -102,7 +95,7 @@ def draw_time_graph(methods, res, ks):
         title=f'Time to Solve TSP',
         xaxis=dict(title="k", titlefont=dict(size=24), tickfont=dict(size=18)),
         yaxis=dict(title="Time to Solve TSP (ms)", titlefont=dict(size=24), tickfont=dict(size=18)),
-        yaxis_type="linear", #"log"
+        yaxis_type="log", #"log"
         font=dict(size=24)
     )
     fig.show()
@@ -145,16 +138,18 @@ def main():
     count_cities = 4
     count_radius = 4
     
-    results = experiment(ks, s1_range, count_cities, count_radius)
-    draw_time_graph(methods = [
+    methods = [
             'lin_kernighan',
             'simulated_annealing',
             'genetic',
             'ant_colony',
             'dynamic',
             'hybrid',
-            # 'branch_and_bound'
-        ], res=results, ks=ks)
+            'branch_and_bound'
+        ]
+    
+    results = experiment(ks, s1_range, count_cities, count_radius, methods)
+    draw_time_graph(methods = methods, res=results, ks=ks)
     comp = make_comparement(results, ks)
     draw_diff_graph(comp, methods = [
             'lin_kernighan',
