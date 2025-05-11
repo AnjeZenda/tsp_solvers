@@ -6,9 +6,9 @@ import pprint
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
-def save_result(method, name, result, k):
+def save_result(method, name, result, k, args=None):
     result[name][k] = {}
-    result[name][k]['tour'] = method(name)
+    result[name][k]['tour'] = method(name, args)
 
 def experiment(ks, s1_range, count_cities, count_radius, methods):
     print("start experiment")
@@ -24,23 +24,15 @@ def experiment(ks, s1_range, count_cities, count_radius, methods):
     
 
     for k in ks:
-        matrix = generate_radial_clusters_matrix(count_cities, count_radius, k, s1_range[0], s1_range[1])
-        # matrix = generate_cluster_matrix(k, count_cities)
+        # matrix = generate_radial_clusters_matrix(count_cities, count_radius, k, s1_range[0], s1_range[1])
+        # matrix = generate_cluster_matrix(count_cities, k)
+        matrix = create_matrix_from_file(k)
         solver = TSPSolver(matrix)
         print(f"k: {k}")
         
         for method in methods:
-            if k > 4 and method == 'branch_and_bound':
-                execution_time = (100000 + k * (k - 2) * np.random.randint(40, 100)) / 1000
-                results[method][k] = {}
-                results[method][k]['tour'] = []
-                length = -1
-            else:
-                execution_time = timeit.timeit(lambda: save_result(solver.solve, method, results, k), number=1)
-                length = solver._tour_length(results[method][k]['tour'])
-            
-            # execution_time = timeit.timeit(lambda: save_result(solver.solve, method, results, k), number=1)
-            # length = solver._tour_length(results[method][k]['tour'])
+            execution_time = timeit.timeit(lambda: save_result(solver.solve, method, results, k), number=1)
+            length = solver._tour_length(results[method][k]['tour'])
             results[method][k]["time"] = execution_time
             results[method][k]['length'] = length
             print(f"\t{method:20} tour: {results[method][k]['tour']} length: {length:.1f} time: {execution_time}")
@@ -68,11 +60,11 @@ def make_comparement(res, ks):
     for m in methods:
         for k in ks:
             count = 0
-            s1 = ''.join(map(str, res[m][k]['tour'])) * 2
+            s1 = '-'.join(map(str, res[m][k]['tour'])) * 2
             s2 = s1[::-1]
-            s = ''.join(map(str, res['dynamic'][k]['tour'])) + str(res['dynamic'][k]['tour'][0])
-            for i in range(len(s) - 1):
-                if s[i:i+2] not in s1 or s[i:i+2] not in s2:
+            s = '-'.join(map(str, res['dynamic'][k]['tour'])) + str(res['dynamic'][k]['tour'][0])
+            for i in range(len(s) - 2):
+                if s[i:i+3] not in s1 or s[i:i+3] not in s2:
                     count += 1
             comp[m][k] = {}
             comp[m][k]['count'] = str(count)
@@ -91,6 +83,15 @@ def draw_time_graph(methods, res, ks):
             name=m,
                 line=dict(width=4)
         ))
+    fig.update_layout(
+        title=f'Time to Solve TSP',
+        xaxis=dict(title="k", titlefont=dict(size=24), tickfont=dict(size=18)),
+        yaxis=dict(title="Time to Solve TSP (ms)", titlefont=dict(size=24), tickfont=dict(size=18)),
+        yaxis_type="linear", #"log"
+        font=dict(size=24)
+    )
+    fig.show()
+    
     fig.update_layout(
         title=f'Time to Solve TSP',
         xaxis=dict(title="k", titlefont=dict(size=24), tickfont=dict(size=18)),
@@ -130,12 +131,12 @@ def draw_diff_graph(comp, methods, ks):
     )
     fig.show()
     
-    pass
+
         
 def main():
-    ks = [1, 2, 3, 4, 5] # 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+    ks = [51, 70, 150] # 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
     s1_range = [1, 50]
-    count_cities = 4
+    count_cities = 16
     count_radius = 4
     
     methods = [
@@ -143,9 +144,9 @@ def main():
             'simulated_annealing',
             'genetic',
             'ant_colony',
-            'dynamic',
+            # 'dynamic',
             'hybrid',
-            'branch_and_bound'
+            # 'branch_and_bound'
         ]
     
     results = experiment(ks, s1_range, count_cities, count_radius, methods)

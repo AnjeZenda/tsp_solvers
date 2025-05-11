@@ -2,10 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-# Генерация случайных чисел
 np.random.seed(42)
 
-### Функция 1: Генерация матрицы с кластерами вершин
 def generate_cluster_matrix(k, m):
     """
     Генерирует матрицу задачи коммивояжера с кластерами вершин.
@@ -14,25 +12,25 @@ def generate_cluster_matrix(k, m):
     :param m: Количество вершин в каждом кластере
     :return: Симметричная матрица расстояний
     """
-    n = k * m  # Общее количество городов
+    n = k * m  
     matrix = np.zeros((n, n))
     
-    # Генерируем координаты городов
+
     for cluster_id in range(k):
-        cluster_coords = np.random.rand(m, 2) * 5  # Координаты внутри кластера
+        cluster_coords = np.random.rand(m, 2) * 5 
         for i in range(m):
             for j in range(m):
                 if i != j:
-                    # Расстояние между вершинами внутри кластера
+
                     dist = np.linalg.norm(cluster_coords[i] - cluster_coords[j])
                     matrix[cluster_id * m + i, cluster_id * m + j] = dist
                     matrix[cluster_id * m + j, cluster_id * m + i] = dist
     
-    # Увеличиваем расстояния между вершинами разных кластеров
+
     for i in range(n):
         for j in range(i + 1, n):
-            if i // m != j // m:  # Если вершины из разных кластеров
-                matrix[i, j] = np.random.uniform(40, 60)  # Большое расстояние
+            if i // m != j // m:  
+                matrix[i, j] = np.random.uniform(40, 60)  
                 matrix[j, i] = matrix[i, j]
     
     for i in range(n):
@@ -49,7 +47,6 @@ def random_cities_points(r, cities, l):
             cities.append((x, y))
     return cities
 
-### Функция 2: Генерация матрицы с городами на окружности
 def generate_circle_matrix(r, n):
     """
     Генерирует матрицу задачи коммивояжера с городами, равномерно расположенными на окружности.
@@ -70,7 +67,6 @@ def generate_circle_matrix(r, n):
         matrix[i, i] = float('inf')
     return matrix
 
-### Функция 3: Генерация матрицы с радиальными кластерами
 def generate_radial_clusters_matrix(n, num_clusters, k = 0, l = 1, h = 1000):
     """
     Генерирует матрицу задачи коммивояжера с радиальными кластерами.
@@ -101,7 +97,7 @@ def draw_graph_from_weight_matrix(weight_matrix, type=None):
                     где weight_matrix[i][j] - вес ребра из i в j.
                     Если вес 0 или None - ребро отсутствует.
     """
-    G = nx.Graph()  # Ориентированный граф. Для неориентированного используйте nx.Graph()
+    G = nx.Graph() 
 
     n = len(weight_matrix)
     for i in range(n):
@@ -119,12 +115,10 @@ def draw_graph_from_weight_matrix(weight_matrix, type=None):
                     G.add_edge(i, j, weight=w)
                     
 
-    pos = nx.spring_layout(G, seed=42)  # Расположение узлов
-    # Рисуем узлы
+    pos = nx.spring_layout(G, seed=42)  
     nx.draw_networkx_nodes(G, pos, node_color='lightblue', node_size=20)
     nx.draw_networkx_labels(G, pos, font_size=8, font_color='black')
 
-    # Рисуем ребра
     nx.draw_networkx_edges(G, pos, arrowstyle='-', arrowsize=1, edge_color="white")
 
 
@@ -132,24 +126,38 @@ def draw_graph_from_weight_matrix(weight_matrix, type=None):
     plt.axis('equal')
     plt.show()
 
-### Главная функция для демонстрации
+def create_matrix_from_file(k):
+    dots = []
+    with open(f'matrix_{k}.txt') as f:
+        for l in f:
+            dot = tuple(map(float, l.split()[1:]))
+            dots.append(dot)
+    n = len(dots)
+    matrix = np.zeros((n, n))
+    
+    for i in range(len(dots) - 1):
+        for j in range(i+1, len(dots)):
+            dist = np.sqrt((dots[i][0] - dots[j][0]) ** 2 + (dots[i][1] - dots[j][1]) ** 2)
+            matrix[i, j] = dist
+            matrix[j, i] = dist
+    for i in range(n):
+        matrix[i, i] = float('inf')
+    return matrix
+
 def start():
-    # Тип 1: Матрица с кластерами вершин
-    k = 3  # Количество кластеров
-    m = 25  # Количество вершин в каждом кластере
+    k = 3  
+    m = 25  
     cluster_matrix = generate_cluster_matrix(k, m)
     print("Матрица с кластерами вершин:")
-    print(cluster_matrix[:10, :10])  # Показываем часть матрицы
+    print(cluster_matrix[:10, :10]) 
     draw_graph_from_weight_matrix(cluster_matrix, 'cluster')
 
-    # Тип 2: Матрица с городами на окружности
-    r = 100  # Радиус окружности
-    n = 60   # Количество городов
+    r = 100  
+    n = 60   
     circle_matrix, coords = generate_circle_matrix(r, n)
     print("\nМатрица с городами на окружности:")
-    print(circle_matrix[:5, :5])  # Показываем часть матрицы
+    print(circle_matrix[:5, :5]) 
     draw_graph_from_weight_matrix(circle_matrix)
-    # Визуализация городов на окружности
     plt.figure(figsize=(6, 6))
     plt.scatter(list(map(lambda x: x[0], coords)), list(map(lambda x: x[1], coords)), s=3, color='blue',)
     circle = plt.Circle((0, 0), r, color='red', fill=False)
@@ -158,12 +166,11 @@ def start():
     plt.axis('equal')
     plt.show()
 
-    # Тип 3: Матрица с радиальными кластерами
-    n = 12  # Количество городов
-    num_clusters = 4 # Количество радиальных кластеров
+    n = 12  
+    num_clusters = 4 
     radial_matrix = generate_radial_clusters_matrix(n, num_clusters)
     print("\nМатрица с радиальными кластерами:")
-    print(radial_matrix[:25, :25])  # Показываем часть матрицы
+    print(radial_matrix[:25, :25]) 
     draw_graph_from_weight_matrix(radial_matrix, 'radial')
 
 if __name__ == "__main__":
